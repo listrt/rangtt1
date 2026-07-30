@@ -6,28 +6,29 @@
     <title>星穹守卫 · 塔防</title>
     <style>
         :root {
-            --bg-page: #edf2f7;
+            --bg-page: #eef2f7;
             --bg-card: #ffffff;
-            --bg-card-hover: #e8edf4;
-            --bg-toolbar: #e2e8f0;
+            --bg-card-hover: #e2e8f0;
+            --bg-toolbar: #e8ecf5;
             --bg-canvas: #dce3ec;
-            --border-light: #c4d0e0;
+            --border-light: #c8d4e0;
             --text-primary: #1a1a2e;
             --text-secondary: #3a3a5a;
             --text-muted: #6a6a8a;
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
-            --shadow-hover: 0 12px 44px rgba(0, 0, 0, 0.18);
+            --shadow: 0 12px 40px rgba(0,0,0,0.08);
+            --shadow-hover: 0 16px 56px rgba(0,0,0,0.16);
             --radius: 18px;
-            --transition: 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
-            --health-bg: rgba(200, 40, 40, 0.22);
+            --transition: 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+            --health-bg: rgba(200,40,40,0.20);
             --health-fg: #d62b2b;
-            --path-color: rgba(120, 140, 180, 0.25);
-            --path-stroke: rgba(80, 100, 150, 0.20);
-            --grid-color: rgba(120, 140, 180, 0.07);
-            --tower-btn-bg: #e8edf5;
+            --path-color: rgba(120,140,180,0.20);
+            --path-stroke: rgba(80,100,150,0.18);
+            --grid-color: rgba(120,140,180,0.06);
+            --btn-bg: #e2e8f0;
             --btn-text: #1a1a2e;
+            --btn-border: #c4d0e0;
+            --glow-color: rgba(30, 120, 255, 0.45);
             --gold-glow: #d4a02b;
-            --wave-bg: rgba(0, 0, 0, 0.04);
         }
         [data-theme="dark"] {
             --bg-page: #0b0b18;
@@ -39,18 +40,20 @@
             --text-primary: #e4e4f0;
             --text-secondary: #b0b0d4;
             --text-muted: #70709a;
-            --shadow: 0 8px 32px rgba(0, 0, 0, 0.55);
-            --shadow-hover: 0 12px 48px rgba(0, 0, 0, 0.75);
-            --health-bg: rgba(200, 40, 40, 0.18);
+            --shadow: 0 12px 40px rgba(0,0,0,0.60);
+            --shadow-hover: 0 16px 56px rgba(0,0,0,0.80);
+            --health-bg: rgba(200,40,40,0.16);
             --health-fg: #f04747;
-            --path-color: rgba(60, 80, 160, 0.25);
-            --path-stroke: rgba(40, 60, 140, 0.20);
-            --grid-color: rgba(60, 80, 160, 0.08);
-            --tower-btn-bg: #1a1a36;
+            --path-color: rgba(60,80,160,0.22);
+            --path-stroke: rgba(40,60,140,0.18);
+            --grid-color: rgba(60,80,160,0.07);
+            --btn-bg: #1a1a36;
             --btn-text: #d4d4ec;
+            --btn-border: #2a2a4e;
+            --glow-color: rgba(160, 80, 255, 0.50);
             --gold-glow: #e8b84a;
-            --wave-bg: rgba(255, 255, 255, 0.04);
         }
+
         * {
             box-sizing: border-box;
             margin: 0;
@@ -64,40 +67,43 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 16px;
+            padding: 18px;
             margin: 0;
             transition: background var(--transition), color var(--transition);
         }
         .game-wrapper {
-            max-width: 1020px;
+            max-width: 1060px;
             width: 100%;
             background: var(--bg-card);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            padding: 18px 22px 22px 22px;
+            padding: 20px 26px 26px 26px;
             transition: background var(--transition), box-shadow var(--transition), border-color var(--transition);
             border: 1px solid var(--border-light);
         }
+
+        /* ===== 顶栏 ===== */
         .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 10px 16px;
-            padding-bottom: 12px;
+            gap: 12px 20px;
+            padding-bottom: 16px;
             border-bottom: 1px solid var(--border-light);
             transition: border-color var(--transition);
-            margin-bottom: 14px;
+            margin-bottom: 16px;
         }
         .header-left {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 18px;
+            flex-wrap: wrap;
         }
         .game-title {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: 700;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.5px;
             background: linear-gradient(135deg, #f5b342, #e07c3a);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -109,16 +115,16 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
         }
         .stat-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             background: var(--bg-toolbar);
-            padding: 4px 14px 4px 10px;
-            border-radius: 30px;
+            padding: 6px 16px 6px 14px;
+            border-radius: 40px;
             transition: background var(--transition), border-color var(--transition);
             border: 1px solid var(--border-light);
             color: var(--text-secondary);
@@ -134,10 +140,10 @@
         .health-bar-wrap {
             display: flex;
             align-items: center;
-            gap: 7px;
+            gap: 8px;
             background: var(--bg-toolbar);
-            padding: 3px 12px 3px 8px;
-            border-radius: 30px;
+            padding: 4px 16px 4px 12px;
+            border-radius: 40px;
             border: 1px solid var(--border-light);
             transition: background var(--transition), border-color var(--transition);
         }
@@ -148,10 +154,10 @@
             transition: fill var(--transition);
         }
         .health-bar-track {
-            width: 80px;
+            width: 86px;
             height: 8px;
             background: var(--health-bg);
-            border-radius: 10px;
+            border-radius: 12px;
             overflow: hidden;
             transition: background var(--transition);
         }
@@ -159,69 +165,83 @@
             height: 100%;
             width: 100%;
             background: var(--health-fg);
-            border-radius: 10px;
+            border-radius: 12px;
             transition: width 0.4s ease, background var(--transition);
         }
-        .header-controls {
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-        .ctrl-btn {
-            background: var(--bg-toolbar);
-            border: 1px solid var(--border-light);
-            color: var(--text-primary);
-            width: 38px;
-            height: 38px;
-            border-radius: 30px;
+
+        /* ===== 按钮基础样式 (圆角长方形 + 光效) ===== */
+        .ctrl-btn, .theme-btn, .tower-btn {
+            position: relative;
+            overflow: hidden;
+            background: var(--btn-bg);
+            border: 1px solid var(--btn-border);
+            color: var(--btn-text);
+            border-radius: 40px;
+            padding: 8px 20px;
             font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            display: flex;
+            transition: transform 0.25s ease, box-shadow 0.3s, background 0.3s, border-color 0.3s;
+            font-family: inherit;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            transition: background var(--transition), border-color var(--transition), transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-            font-weight: 600;
+            gap: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            user-select: none;
         }
-        .ctrl-btn:hover {
-            background: var(--bg-card-hover);
+        .ctrl-btn:hover, .theme-btn:hover, .tower-btn:hover {
             transform: scale(1.05);
             box-shadow: var(--shadow-hover);
+            border-color: #7a9aff;
         }
-        .ctrl-btn:active {
-            transform: scale(0.93);
+        .ctrl-btn:active, .theme-btn:active, .tower-btn:active {
+            transform: scale(0.94);
         }
-        .ctrl-btn.active {
+
+        /* 光效伪元素 */
+        .ctrl-btn::after, .theme-btn::after, .tower-btn::after {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -60%;
+            width: 220%;
+            height: 220%;
+            background: linear-gradient(45deg, transparent 40%, var(--glow-color) 50%, transparent 60%);
+            transform: rotate(45deg) translateX(-120%) translateY(-120%);
+            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.4, 1);
+            pointer-events: none;
+        }
+        .ctrl-btn:hover::after, .theme-btn:hover::after, .tower-btn:hover::after {
+            transform: rotate(45deg) translateX(20%) translateY(20%);
+        }
+
+        /* 选中状态 */
+        .tower-btn.selected {
             border-color: #4a7aff;
-            box-shadow: 0 0 0 3px rgba(74, 122, 255, 0.18);
+            background: rgba(74, 122, 255, 0.15);
+            box-shadow: 0 0 0 3px rgba(74, 122, 255, 0.15);
         }
-        .theme-toggle {
-            width: 42px;
-            height: 42px;
-            background: var(--bg-toolbar);
-            border: 1px solid var(--border-light);
-            border-radius: 30px;
-            cursor: pointer;
-            transition: background var(--transition), border-color var(--transition), transform 0.4s ease;
+
+        .header-controls {
             display: flex;
+            gap: 8px;
             align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            color: var(--text-primary);
-            font-weight: 500;
+            flex-wrap: wrap;
         }
-        .theme-toggle:hover {
-            transform: rotate(20deg) scale(1.06);
-            background: var(--bg-card-hover);
+        .theme-btn {
+            padding: 8px 16px;
         }
+
+        /* ===== 画布 ===== */
         .canvas-wrap {
             position: relative;
-            border-radius: 14px;
+            border-radius: 16px;
             overflow: hidden;
             border: 1px solid var(--border-light);
             background: var(--bg-canvas);
             transition: border-color var(--transition), background var(--transition);
-            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.04);
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.04);
         }
         #gameCanvas {
             display: block;
@@ -232,74 +252,45 @@
             cursor: crosshair;
             touch-action: none;
         }
+
+        /* ===== 底部工具栏 ===== */
         .toolbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-wrap: wrap;
-            gap: 10px 14px;
-            margin-top: 14px;
-            padding-top: 14px;
+            gap: 12px 18px;
+            margin-top: 16px;
+            padding-top: 16px;
             border-top: 1px solid var(--border-light);
             transition: border-color var(--transition);
         }
         .tower-buttons {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
-        }
-        .tower-btn {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--tower-btn-bg);
-            border: 2px solid var(--border-light);
-            border-radius: 40px;
-            padding: 6px 16px 6px 12px;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-primary);
-            cursor: pointer;
-            transition: all var(--transition);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
-            font-family: inherit;
-        }
-        .tower-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hover);
-            border-color: #7a9aff;
-        }
-        .tower-btn.selected {
-            border-color: #4a7aff;
-            background: rgba(74, 122, 255, 0.15);
-            box-shadow: 0 0 0 3px rgba(74, 122, 255, 0.12);
-        }
-        .tower-btn .cost {
-            color: var(--gold-glow);
-            font-weight: 700;
         }
         .tower-btn .tower-preview {
             display: inline-block;
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
+            width: 26px;
+            height: 26px;
+            border-radius: 8px;
+            margin-right: 2px;
         }
-        .tower-preview.fire {
-            background: radial-gradient(circle at 30% 30%, #ff7a3a, #d94a1a);
-        }
-        .tower-preview.ice {
-            background: radial-gradient(circle at 30% 30%, #6ac8ff, #1a7ad4);
-        }
-        .tower-preview.thunder {
-            background: radial-gradient(circle at 30% 30%, #f5d742, #b87a1a);
+        .tower-preview.fire { background: radial-gradient(circle at 30% 30%, #ff7a3a, #d94a1a); }
+        .tower-preview.ice { background: radial-gradient(circle at 30% 30%, #6ac8ff, #1a7ad4); }
+        .tower-preview.thunder { background: radial-gradient(circle at 30% 30%, #f5d742, #b87a1a); }
+        .tower-btn .cost {
+            color: var(--gold-glow);
+            font-weight: 700;
         }
         .wave-info {
             font-size: 14px;
             font-weight: 500;
             color: var(--text-secondary);
             background: var(--bg-toolbar);
-            padding: 4px 16px;
-            border-radius: 30px;
+            padding: 6px 20px;
+            border-radius: 40px;
             border: 1px solid var(--border-light);
             transition: background var(--transition), border-color var(--transition);
         }
@@ -307,38 +298,41 @@
             font-weight: 700;
             color: var(--text-primary);
         }
-        @media (max-width: 680px) {
-            .game-wrapper { padding: 12px 12px 16px; }
-            .header { flex-direction: column; align-items: stretch; gap: 8px; }
+
+        /* ===== 响应式 ===== */
+        @media (max-width: 720px) {
+            .game-wrapper { padding: 14px 14px 18px; }
+            .header { flex-direction: column; align-items: stretch; gap: 10px; }
             .header-left { flex-wrap: wrap; justify-content: space-between; }
             .header-stats { justify-content: space-around; }
             .health-bar-track { width: 60px; }
-            .game-title { font-size: 18px; }
+            .game-title { font-size: 20px; }
             .toolbar { flex-direction: column; align-items: stretch; }
             .tower-buttons { justify-content: center; }
             .wave-info { text-align: center; }
-            .ctrl-btn { width: 34px; height: 34px; font-size: 12px; }
+            .ctrl-btn, .theme-btn, .tower-btn { padding: 6px 14px; font-size: 12px; }
         }
-        @media (max-width: 440px) {
-            .stat-item { padding: 2px 8px 2px 6px; font-size: 12px; }
-            .tower-btn { padding: 4px 10px 4px 8px; font-size: 11px; }
+        @media (max-width: 460px) {
+            .stat-item { padding: 4px 10px; font-size: 12px; }
+            .tower-btn { padding: 4px 10px; font-size: 11px; }
             .health-bar-track { width: 44px; }
-            .game-title { font-size: 15px; }
+            .game-title { font-size: 16px; }
         }
     </style>
 </head>
 <body>
     <div class="game-wrapper">
+        <!-- 顶栏 -->
         <header class="header">
             <div class="header-left">
-                <div class="game-title">* 星穹守卫</div>
+                <div class="game-title">✦ 星穹守卫</div>
                 <div class="header-stats">
                     <div class="stat-item">
                         <span class="value gold" id="goldDisplay">120</span>
                         <span style="font-size:13px; color:var(--gold-glow);">G</span>
                     </div>
                     <div class="stat-item">
-                        <span>W</span>
+                        <span>波次</span>
                         <span class="value" id="waveDisplay">0</span>
                     </div>
                     <div class="health-bar-wrap">
@@ -351,15 +345,19 @@
                 </div>
             </div>
             <div class="header-controls">
-                <button class="ctrl-btn" id="btnStart">></button>
-                <button class="ctrl-btn" id="btnSpeed">>></button>
-                <button class="ctrl-btn" id="btnRestart">R</button>
-                <button class="theme-toggle" id="themeToggle">T</button>
+                <button class="ctrl-btn" id="btnStart">开始</button>
+                <button class="ctrl-btn" id="btnSpeed">加速</button>
+                <button class="ctrl-btn" id="btnRestart">重置</button>
+                <button class="theme-btn" id="themeToggle">主题</button>
             </div>
         </header>
+
+        <!-- 画布 -->
         <div class="canvas-wrap">
             <canvas id="gameCanvas" width="900" height="550"></canvas>
         </div>
+
+        <!-- 底部工具栏 -->
         <div class="toolbar">
             <div class="tower-buttons">
                 <button class="tower-btn" data-tower="fire" id="towerFire">
@@ -371,15 +369,17 @@
                 <button class="tower-btn" data-tower="thunder" id="towerThunder">
                     <span class="tower-preview thunder"></span> 闪电 <span class="cost">G130</span>
                 </button>
-                <button class="tower-btn" id="btnDeselect" style="border-color:transparent; background:transparent; box-shadow:none; color:var(--text-muted);">X 取消</button>
+                <button class="tower-btn" id="btnDeselect" style="border-color:transparent; background:transparent; box-shadow:none; color:var(--text-muted);">取消</button>
             </div>
             <div class="wave-info">
                 下一波 <span id="nextWaveCount">5</span> 个敌人
             </div>
         </div>
     </div>
+
     <script>
         (function() {
+            // 获取 DOM 元素
             var canvas = document.getElementById('gameCanvas');
             var ctx = canvas.getContext('2d');
             var goldSpan = document.getElementById('goldDisplay');
@@ -399,6 +399,7 @@
             var CW = 900, CH = 550;
             canvas.width = CW; canvas.height = CH;
 
+            // 路径定义
             var pathPoints = [
                 {x:60,y:80},{x:200,y:80},{x:200,y:240},
                 {x:440,y:240},{x:440,y:100},{x:640,y:100},
@@ -429,6 +430,7 @@
                 return {x: pathPoints[pathPoints.length-1].x, y: pathPoints[pathPoints.length-1].y};
             }
 
+            // 游戏状态
             var game = {
                 gold: 120,
                 wave: 0,
@@ -466,7 +468,7 @@
                 game.maxEnemiesThisWave = 5;
                 game.selectedTower = null;
                 game.frameCount = 0;
-                btnStart.textContent = '>';
+                btnStart.textContent = '开始';
                 updateUI();
                 updateButtons();
             }
@@ -523,7 +525,7 @@
                 game.maxEnemiesThisWave = 5 + game.wave * 3;
                 game.spawnInterval = Math.max(0.4, 1.2 - game.wave * 0.04);
                 game.isRunning = true;
-                btnStart.textContent = '||';
+                btnStart.textContent = '暂停';
                 updateUI();
             }
 
@@ -602,7 +604,7 @@
                         updateUI();
                         if (game.health <= 0) {
                             game.isRunning = false;
-                            btnStart.textContent = '>';
+                            btnStart.textContent = '开始';
                         }
                         game.enemies.splice(i,1);
                         continue;
@@ -660,7 +662,7 @@
                 if (game.enemiesThisWave >= game.maxEnemiesThisWave) {
                     if (game.enemies.length === 0) {
                         game.isRunning = false;
-                        btnStart.textContent = '>';
+                        btnStart.textContent = '开始';
                     }
                     return;
                 }
@@ -682,18 +684,19 @@
                 updateUI();
             }
 
+            // ---------- 绘图 ----------
             function drawPath() {
                 ctx.beginPath();
                 ctx.moveTo(pathPoints[0].x, pathPoints[0].y);
                 for (var i=1; i<pathPoints.length; i++) {
                     ctx.lineTo(pathPoints[i].x, pathPoints[i].y);
                 }
-                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--path-stroke').trim() || 'rgba(80,100,150,0.20)';
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--path-stroke').trim() || 'rgba(80,100,150,0.18)';
                 ctx.lineWidth = 22;
                 ctx.lineJoin = 'round';
                 ctx.lineCap = 'round';
                 ctx.stroke();
-                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--path-color').trim() || 'rgba(120,140,180,0.25)';
+                ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--path-color').trim() || 'rgba(120,140,180,0.20)';
                 ctx.lineWidth = 18;
                 ctx.stroke();
             }
@@ -737,6 +740,7 @@
                         ctx.lineWidth = 1.5;
                         ctx.stroke();
                     }
+                    // 血量条
                     var hpW = rad*1.8;
                     var hpH = 3;
                     var hpX = cx - hpW/2;
@@ -770,15 +774,10 @@
                     }
                     ctx.fillStyle = grad;
                     ctx.fill();
-                    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
                     ctx.lineWidth = 1.5;
                     ctx.stroke();
-                    ctx.fillStyle = 'rgba(255,255,255,0.7)';
-                    ctx.font = '12px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    var label = t.type==='fire'?'F':t.type==='ice'?'I':'T';
-                    ctx.fillText(label, cx, cy-1);
+                    // 不再绘制字母
                 }
             }
 
@@ -790,7 +789,7 @@
                     ctx.arc(b.x, b.y, 5, 0, 2*Math.PI);
                     ctx.fillStyle = b.color || '#ffcc44';
                     ctx.fill();
-                    ctx.shadowBlur = 12;
+                    ctx.shadowBlur = 14;
                     ctx.shadowColor = b.color || '#ffcc44';
                     ctx.fill();
                     ctx.shadowBlur = 0;
@@ -798,7 +797,7 @@
             }
 
             function drawGrid() {
-                var gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-color').trim() || 'rgba(120,140,180,0.07)';
+                var gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-color').trim() || 'rgba(120,140,180,0.06)';
                 ctx.strokeStyle = gridColor;
                 ctx.lineWidth = 0.5;
                 for (var x=0; x<CW; x+=40) {
@@ -817,15 +816,15 @@
 
             function drawUIOverlay() {
                 if (game.health <= 0) {
-                    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+                    ctx.fillStyle = 'rgba(0,0,0,0.5)';
                     ctx.fillRect(0, 0, CW, CH);
                     ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 40px sans-serif';
+                    ctx.font = 'bold 44px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText('游戏结束', CW/2, CH/2-10);
-                    ctx.font = '20px sans-serif';
-                    ctx.fillText('点击 ">" 重新开始', CW/2, CH/2+50);
+                    ctx.font = '22px sans-serif';
+                    ctx.fillText('点击 "开始" 重新开始', CW/2, CH/2+50);
                 }
             }
 
@@ -839,6 +838,7 @@
                 drawUIOverlay();
             }
 
+            // ---------- 游戏循环 ----------
             var lastTime = 0;
             var accumulator = 0;
             var fixedDelta = 1/60;
@@ -860,7 +860,7 @@
                 requestAnimationFrame(loop);
             }
 
-            // Event listeners
+            // ---------- 事件绑定 ----------
             canvas.addEventListener('click', function(e) {
                 var rect = canvas.getBoundingClientRect();
                 var scaleX = canvas.width / rect.width;
@@ -899,18 +899,18 @@
                         startWave();
                     } else {
                         game.isRunning = true;
-                        btnStart.textContent = '||';
+                        btnStart.textContent = '暂停';
                     }
                 } else {
                     game.isRunning = false;
-                    btnStart.textContent = '>';
+                    btnStart.textContent = '开始';
                 }
             });
 
             btnSpeed.addEventListener('click', function() {
                 if (game.speed === 1) { game.speed = 2; btnSpeed.textContent = '2x'; }
                 else if (game.speed === 2) { game.speed = 3; btnSpeed.textContent = '3x'; }
-                else { game.speed = 1; btnSpeed.textContent = '>>'; }
+                else { game.speed = 1; btnSpeed.textContent = '加速'; }
             });
 
             btnRestart.addEventListener('click', function() {
@@ -924,10 +924,10 @@
                 var current = html.getAttribute('data-theme');
                 if (current === 'dark') {
                     html.removeAttribute('data-theme');
-                    themeToggle.textContent = 'T';
+                    themeToggle.textContent = '主题';
                 } else {
                     html.setAttribute('data-theme', 'dark');
-                    themeToggle.textContent = 'T';
+                    themeToggle.textContent = '主题';
                 }
             });
 
