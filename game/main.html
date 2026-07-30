@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>丝滑 · 方舟</title>
+    <style>
+        /* ============================================================
+               注册自定义属性（让渐变旋转平滑）
+               ============================================================ */
+        @property --angle {
+            syntax: "<angle>";
+            initial-value: 0deg;
+            inherits: false;
+        }
+        @property --angle2 {
+            syntax: "<angle>";
+            initial-value: 90deg;
+            inherits: false;
+        }
+
+        /* ============================================================
+               全局背景
+               ============================================================ */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background:
+                radial-gradient(ellipse at 30% 40%, #0a0a2a, transparent 60%),
+                radial-gradient(ellipse at 70% 60%, #1a0a2a, transparent 60%),
+                linear-gradient(135deg, #05050f, #0d0d1a);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            overflow: hidden;
+        }
+
+        /* 背景浮动星云（纯 CSS） */
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            pointer-events: none;
+            z-index: 0;
+            animation: cosmicDrift 20s linear infinite alternate;
+        }
+        body::before {
+            width: 50vw;
+            height: 50vw;
+            top: -20%;
+            left: -10%;
+            background: radial-gradient(circle, rgba(100, 80, 255, 0.10), transparent 70%);
+        }
+        body::after {
+            width: 60vw;
+            height: 60vw;
+            bottom: -20%;
+            right: -10%;
+            background: radial-gradient(circle, rgba(0, 200, 255, 0.06), transparent 70%);
+            animation-duration: 26s;
+            animation-direction: alternate-reverse;
+        }
+
+        @keyframes cosmicDrift {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(30px, -20px) scale(1.2);
+            }
+        }
+
+        /* ============================================================
+               主容器（呼吸光晕柔和）
+               ============================================================ */
+        .launcher {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            padding: 40px;
+            filter: drop-shadow(0 0 20px rgba(100, 80, 255, 0.05));
+            transition: filter 1.5s ease;
+        }
+        .launcher:hover {
+            /* 整体光晕缓慢扩散，但不亮 */
+            filter: drop-shadow(0 0 60px rgba(180, 100, 255, 0.10));
+        }
+
+        /* ============================================================
+               方形圆角卡片 —— 一切变化都走 transition
+               ============================================================ */
+        .game-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 260px;
+            height: 280px;
+            border-radius: 32px;
+            text-decoration: none;
+            color: #fff;
+            /* 锥形渐变边框 —— 持续旋转，不暂停 */
+            background: conic-gradient(from var(--angle) at 50% 50%,
+                    rgba(255, 80, 180, 0.35),
+                    rgba(80, 200, 255, 0.35),
+                    rgba(255, 80, 180, 0.35),
+                    rgba(200, 120, 255, 0.35));
+            background-blend-mode: screen;
+            padding: 4px;
+            animation: spinBorder 12s linear infinite;
+            /* 轻微浮动，非常柔和 */
+            transform: translateY(0px);
+            animation: spinBorder 12s linear infinite, gentleFloat 5s ease-in-out infinite alternate;
+            will-change: transform, filter;
+            /* 所有可过渡属性都加上丝滑曲线 */
+            transition:
+                transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                filter 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .game-card:nth-child(1) {
+            animation-delay: 0s, 0s;
+        }
+        .game-card:nth-child(2) {
+            animation-delay: 0s, 2.5s;
+        }
+
+        @keyframes spinBorder {
+            from {
+                --angle: 0deg;
+            }
+            to {
+                --angle: 360deg;
+            }
+        }
+
+        @keyframes gentleFloat {
+            0% {
+                transform: translateY(-6px);
+            }
+            100% {
+                transform: translateY(6px);
+            }
+        }
+
+        /* ---------- 卡片内部 ---------- */
+        .game-card .inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 28px;
+            background: radial-gradient(circle at 30% 30%, #1a1a3a, #0a0a18 90%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 内部旋转流光层（更柔和） */
+        .game-card .inner::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: conic-gradient(from var(--angle2) at 40% 60%,
+                    transparent,
+                    rgba(255, 255, 255, 0.03),
+                    transparent 30%,
+                    rgba(120, 200, 255, 0.06),
+                    transparent 60%);
+            animation: spinLight 16s linear infinite;
+            mix-blend-mode: overlay;
+            pointer-events: none;
+        }
+
+        @keyframes spinLight {
+            from {
+                --angle2: 0deg;
+            }
+            to {
+                --angle2: 360deg;
+            }
+        }
+
+        /* 内部中心光晕（持续呼吸，不受悬停影响） */
+        .game-card .inner::after {
+            content: '';
+            position: absolute;
+            width: 70%;
+            height: 70%;
+            top: 15%;
+            left: 15%;
+            background: radial-gradient(circle at center, rgba(180, 160, 255, 0.12), transparent 70%);
+            filter: blur(30px);
+            animation: pulseCore 5s ease-in-out infinite alternate;
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes pulseCore {
+            0% {
+                transform: scale(0.8);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        /* ---------- 内容 ---------- */
+        .game-card .number {
+            font-size: 4.2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e0d6ff, #a78bfa, #6ee7ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            position: relative;
+            z-index: 2;
+            letter-spacing: -2px;
+            filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.15));
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            line-height: 1;
+        }
+
+        .game-card .icon-symbol {
+            font-size: 1.8rem;
+            margin-top: 6px;
+            opacity: 0.4;
+            position: relative;
+            z-index: 2;
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-text-fill-color: initial;
+            background: none;
+        }
+
+        /* 底部装饰条 */
+        .game-card .bar {
+            position: absolute;
+            bottom: 20%;
+            width: 40%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+            border-radius: 2px;
+            z-index: 2;
+            animation: barSlide 6s ease-in-out infinite alternate;
+            transition: all 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes barSlide {
+            0% {
+                transform: scaleX(0.6) translateX(-10px);
+                opacity: 0.2;
+            }
+            100% {
+                transform: scaleX(1.4) translateX(10px);
+                opacity: 0.6;
+            }
+        }
+
+        /* ============================================================
+               悬停交互 —— 纯丝滑，无亮度突变，无缩放
+               ============================================================ */
+        .game-card:hover {
+            /* 只做轻微上浮，不缩放 */
+            transform: translateY(-10px) !important;
+            /* 不改变亮度，只改变阴影扩散范围 */
+            filter: drop-shadow(0 0 40px rgba(167, 139, 250, 0.4));
+            /* 边框渐变稍微提升饱和度（但不明显变亮） */
+            background: conic-gradient(from var(--angle) at 50% 50%,
+                    rgba(255, 100, 200, 0.50),
+                    rgba(100, 220, 255, 0.50),
+                    rgba(255, 100, 200, 0.50),
+                    rgba(210, 140, 255, 0.50));
+            background-blend-mode: screen;
+            /* 注意：我们保留了动画，不暂停，所以边框继续旋转 */
+        }
+
+        /* 悬停时内部光晕的透明度稍微提升，但亮度不变 */
+        .game-card:hover .inner::after {
+            background: radial-gradient(circle at center, rgba(200, 180, 255, 0.20), transparent 70%);
+            /* 不改变 filter: blur 和 animation */
+        }
+
+        /* 悬停时数字颜色渐变微调（更温暖） */
+        .game-card:hover .number {
+            transform: rotate(-2deg) scale(1.02);
+            background: linear-gradient(135deg, #f0d8b0, #ff8aae, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(255, 107, 157, 0.25));
+        }
+
+        /* 悬停时符号上浮一点 */
+        .game-card:hover .icon-symbol {
+            transform: translateY(-4px);
+            opacity: 0.7;
+            filter: drop-shadow(0 0 12px rgba(0, 200, 255, 0.2));
+        }
+
+        /* 悬停时底部装饰条略微变亮 */
+        .game-card:hover .bar {
+            background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.4), transparent);
+            height: 2px;
+        }
+
+        /* ============================================================
+               兄弟联动 —— 非悬停卡片轻微退居后台（不突变）
+               ============================================================ */
+        .launcher:has(.game-card:nth-child(1):hover) .game-card:nth-child(2) {
+            transform: translateY(0px) !important;
+            filter: saturate(0.6) blur(0.5px);
+            transition: all 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .launcher:has(.game-card:nth-child(2):hover) .game-card:nth-child(1) {
+            transform: translateY(0px) !important;
+            filter: saturate(0.6) blur(0.5px);
+            transition: all 0.9s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* 保证所有状态变化都走 transition */
+        .game-card {
+            transition:
+                transform 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                filter 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+                background 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ============================================================
+               响应式
+               ============================================================ */
+        @media (max-width: 640px) {
+            .launcher {
+                gap: 30px;
+                padding: 20px;
+            }
+            .game-card {
+                width: 200px;
+                height: 220px;
+                border-radius: 24px;
+            }
+            .game-card .inner {
+                border-radius: 20px;
+            }
+            .game-card .number {
+                font-size: 3.2rem;
+            }
+            .game-card .icon-symbol {
+                font-size: 1.4rem;
+            }
+            .game-card .bar {
+                bottom: 16%;
+                width: 30%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-card {
+                width: 160px;
+                height: 180px;
+                border-radius: 18px;
+            }
+            .game-card .inner {
+                border-radius: 14px;
+            }
+            .game-card .number {
+                font-size: 2.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== DOM 极简 ===== -->
+    <div class="launcher">
+        <a href="http://rangtt.com/game/1.html" target="_blank" class="game-card">
+            <div class="inner">
+                <span class="number">01</span>
+                <span class="icon-symbol">✦</span>
+                <div class="bar"></div>
+            </div>
+        </a>
+
+        <a href="http://rangtt.com/game/2.html" target="_blank" class="game-card">
+            <div class="inner">
+                <span class="number">02</span>
+                <span class="icon-symbol">◈</span>
+                <div class="bar"></div>
+            </div>
+        </a>
+    </div>
+
+</body>
+</html>
