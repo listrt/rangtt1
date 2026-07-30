@@ -1,1 +1,479 @@
-<h3>no</h3>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>彩块消消乐</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            min-height: 100vh;
+            background: #3d3d4a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            touch-action: pan-y;
+        }
+        .game-box {
+            background: #2b2b38;
+            padding: 20px 20px 28px;
+            border-radius: 48px;
+            box-shadow: 0 12px 0 #1a1a24, 0 20px 40px rgba(0,0,0,0.6);
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+            aspect-ratio: 400 / 500;
+            background: #eae6df;
+            border-radius: 32px;
+            box-shadow: inset 0 -6px 0 #b8b0a4, inset 0 0 0 2px #f5f0e8;
+            cursor: pointer;
+            touch-action: none;
+        }
+        .panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 18px 8px 0;
+            color: #f0ede8;
+            font-weight: 600;
+            text-shadow: 0 2px 0 #1e1e28;
+        }
+        .score-box {
+            background: #22222e;
+            padding: 6px 18px;
+            border-radius: 60px;
+            font-size: 1.3rem;
+            letter-spacing: 0.5px;
+            box-shadow: inset 0 -3px 0 #0f0f16, 0 4px 0 #12121c;
+        }
+        .score-box span {
+            color: #feda7a;
+            margin-right: 6px;
+        }
+        .reset-btn {
+            background: #3e3e52;
+            border: none;
+            color: #f0ede8;
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 6px 20px;
+            border-radius: 60px;
+            box-shadow: inset 0 -3px 0 #1e1e2a, 0 4px 0 #1a1a26;
+            cursor: pointer;
+            transition: 0.07s ease;
+            touch-action: manipulation;
+        }
+        .reset-btn:active {
+            transform: translateY(4px);
+            box-shadow: inset 0 -3px 0 #1e1e2a, 0 0px 0 #1a1a26;
+        }
+        .hint {
+            color: #b9b3aa;
+            font-size: 0.85rem;
+            margin-top: 12px;
+            text-align: center;
+            letter-spacing: 0.3px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+<div class="game-box">
+    <canvas id="gameCanvas" width="400" height="500"></canvas>
+    <div class="panel">
+        <div class="score-box"><span>✦</span> <span id="scoreDisplay">0</span></div>
+        <button class="reset-btn" id="resetButton">⟳ 重开</button>
+    </div>
+    <div class="hint">点击相邻同色方块 · 消除得分</div>
+</div>
+<script>
+    (function(){
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreSpan = document.getElementById('scoreDisplay');
+
+        // ----- 游戏配置 -----
+        const ROWS = 8;
+        const COLS = 8;
+        const COLORS = [
+            '#e15a5a', // 红
+            '#f0b34b', // 橙黄
+            '#6cc46c', // 绿
+            '#4f9fd4', // 蓝
+            '#b77cdb', // 紫
+            '#f2a7b6'  // 粉
+        ];
+        // 每个颜色对应的浅色高光 (用于立体感)
+        const LIGHT_COLORS = [
+            '#f57a7a', '#fccf6a', '#8ed68e', '#78bae8', '#cf9ee8', '#f8c2d0'
+        ];
+
+        let grid = [];
+        let score = 0;
+        let selectedRow = -1, selectedCol = -1;  // -1 表示未选中
+
+        // ----- 初始化网格 (保证没有初始三连，且尽量丰富) -----
+        function initGrid() {
+            const newGrid = [];
+            for (let r = 0; r < ROWS; r++) {
+                const row = [];
+                for (let c = 0; c < COLS; c++) {
+                    let colorIdx;
+                    let attempts = 0;
+                    do {
+                        colorIdx = Math.floor(Math.random() * COLORS.length);
+                        attempts++;
+                        // 防止水平三连 (左边两个相同)
+                        const left1 = (c >= 2) ? row[c-1] : -1;
+                        const left2 = (c >= 1) ? row[c-2] : -1;
+                        const up1 = (r >= 2) ? newGrid[r-1][c] : -1;
+                        const up2 = (r >= 1) ? newGrid[r-2][c] : -1;
+                        const horzMatch = (colorIdx === left1 && colorIdx === left2);
+                        const vertMatch = (colorIdx === up1 && colorIdx === up2);
+                        if (!horzMatch && !vertMatch) break;
+                        if (attempts > 30) break; // 安全阀
+                    } while (true);
+                    row.push(colorIdx);
+                }
+                newGrid.push(row);
+            }
+            return newGrid;
+        }
+
+        // ----- 重新开始 -----
+        function resetGame() {
+            grid = initGrid();
+            score = 0;
+            selectedRow = -1;
+            selectedCol = -1;
+            updateScore();
+            drawBoard();
+        }
+
+        // ----- 绘制网格 (带圆角方块) -----
+        function drawBoard() {
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const padding = 14;
+            const cellSize = (w - padding * 2) / COLS;
+            const gap = 4;
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const idx = grid[r][c];
+                    const color = COLORS[idx];
+                    const light = LIGHT_COLORS[idx];
+
+                    const x = padding + c * cellSize + gap/2;
+                    const y = padding + r * cellSize + gap/2;
+                    const size = cellSize - gap;
+
+                    // 主方块 (圆角)
+                    const radius = 8;
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, size, size, radius);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+
+                    // 高光 (立体感)
+                    ctx.beginPath();
+                    ctx.roundRect(x+2, y+2, size*0.5, size*0.3, 4);
+                    ctx.fillStyle = light;
+                    ctx.globalAlpha = 0.35;
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+
+                    // 边框 + 阴影
+                    ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, size, size, radius);
+                    ctx.stroke();
+
+                    // 选中高亮 (外发光)
+                    if (selectedRow === r && selectedCol === c) {
+                        ctx.shadowColor = '#fff9e6';
+                        ctx.shadowBlur = 16;
+                        ctx.beginPath();
+                        ctx.roundRect(x-2, y-2, size+4, size+4, radius+2);
+                        ctx.strokeStyle = '#fee7a0';
+                        ctx.lineWidth = 3;
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                        // 内圈
+                        ctx.beginPath();
+                        ctx.roundRect(x, y, size, size, radius);
+                        ctx.strokeStyle = '#ffffff80';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // 绘制淡淡的网格线 (装饰)
+            ctx.strokeStyle = 'rgba(0,0,0,0.04)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= COLS; i++) {
+                const x = padding + i * cellSize;
+                ctx.beginPath();
+                ctx.moveTo(x, padding);
+                ctx.lineTo(x, h - padding);
+                ctx.stroke();
+            }
+            for (let i = 0; i <= ROWS; i++) {
+                const y = padding + i * cellSize;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(w - padding, y);
+                ctx.stroke();
+            }
+        }
+
+        // ----- roundRect 辅助 -----
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (r > w/2) r = w/2;
+            if (r > h/2) r = h/2;
+            this.moveTo(x + r, y);
+            this.lineTo(x + w - r, y);
+            this.quadraticCurveTo(x + w, y, x + w, y + r);
+            this.lineTo(x + w, y + h - r);
+            this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            this.lineTo(x + r, y + h);
+            this.quadraticCurveTo(x, y + h, x, y + h - r);
+            this.lineTo(x, y + r);
+            this.quadraticCurveTo(x, y, x + r, y);
+            this.closePath();
+            return this;
+        };
+
+        // ----- 分数更新 -----
+        function updateScore() {
+            scoreSpan.textContent = score;
+        }
+
+        // ----- 核心消除逻辑 (返回消除的坐标数组) -----
+        function findMatches() {
+            const matches = new Set(); // 用字符串 "r,c" 存储
+
+            // 水平三连+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS - 2; c++) {
+                    const val = grid[r][c];
+                    if (val === -1) continue;
+                    let len = 1;
+                    while (c + len < COLS && grid[r][c + len] === val) len++;
+                    if (len >= 3) {
+                        for (let i = 0; i < len; i++) {
+                            matches.add(`${r},${c + i}`);
+                        }
+                    }
+                    c += len - 1;
+                }
+            }
+
+            // 垂直三连+
+            for (let c = 0; c < COLS; c++) {
+                for (let r = 0; r < ROWS - 2; r++) {
+                    const val = grid[r][c];
+                    if (val === -1) continue;
+                    let len = 1;
+                    while (r + len < ROWS && grid[r + len][c] === val) len++;
+                    if (len >= 3) {
+                        for (let i = 0; i < len; i++) {
+                            matches.add(`${r + i},${c}`);
+                        }
+                    }
+                    r += len - 1;
+                }
+            }
+            return matches;
+        }
+
+        // ----- 重力下落 & 顶部填充 -----
+        function applyGravityAndRefill() {
+            let changed = false;
+            for (let c = 0; c < COLS; c++) {
+                // 从下往上搬运
+                let writeRow = ROWS - 1;
+                for (let r = ROWS - 1; r >= 0; r--) {
+                    if (grid[r][c] !== -1) {
+                        if (r !== writeRow) {
+                            grid[writeRow][c] = grid[r][c];
+                            grid[r][c] = -1;
+                            changed = true;
+                        }
+                        writeRow--;
+                    }
+                }
+                // 填充空位 (writeRow 及以上都是 -1)
+                for (let r = writeRow; r >= 0; r--) {
+                    grid[r][c] = Math.floor(Math.random() * COLORS.length);
+                    changed = true;
+                }
+            }
+            return changed;
+        }
+
+        // ----- 反复消除直到稳定 (返回消除总数) -----
+        function settleBoard() {
+            let totalEliminated = 0;
+            let anyEliminated = true;
+            while (anyEliminated) {
+                anyEliminated = false;
+                const matches = findMatches();
+                if (matches.size === 0) break;
+
+                // 消除 (标记为 -1)
+                for (const key of matches) {
+                    const [r, c] = key.split(',').map(Number);
+                    if (grid[r][c] !== -1) {
+                        grid[r][c] = -1;
+                        anyEliminated = true;
+                    }
+                }
+                totalEliminated += matches.size;
+                // 下落 + 补新
+                applyGravityAndRefill();
+            }
+            return totalEliminated;
+        }
+
+        // ----- 尝试交换并消除 (玩家点击逻辑) -----
+        function trySwapAndClear(row1, col1, row2, col2) {
+            // 边界检查 & 相邻检查 (上下左右)
+            if (row1 < 0 || row1 >= ROWS || col1 < 0 || col1 >= COLS ||
+                row2 < 0 || row2 >= ROWS || col2 < 0 || col2 >= COLS) return false;
+            const dr = Math.abs(row1 - row2);
+            const dc = Math.abs(col1 - col2);
+            if ((dr === 1 && dc === 0) || (dr === 0 && dc === 1)) {
+                // 相邻
+            } else {
+                return false;
+            }
+
+            // 交换
+            const temp = grid[row1][col1];
+            grid[row1][col1] = grid[row2][col2];
+            grid[row2][col2] = temp;
+
+            // 检查是否有消除
+            const matches = findMatches();
+            if (matches.size === 0) {
+                // 没有消除: 换回来
+                const tempBack = grid[row1][col1];
+                grid[row1][col1] = grid[row2][col2];
+                grid[row2][col2] = tempBack;
+                return false;
+            }
+
+            // 有效交换: 执行消除循环
+            let totalEliminated = 0;
+            // 先消除当前匹配
+            for (const key of matches) {
+                const [r, c] = key.split(',').map(Number);
+                if (grid[r][c] !== -1) {
+                    grid[r][c] = -1;
+                    totalEliminated++;
+                }
+            }
+            // 重力 + 补新 + 连锁消除
+            applyGravityAndRefill();
+            totalEliminated += settleBoard(); // 连锁消除
+
+            // 增加得分 (消除数量 * 10)
+            score += totalEliminated * 10;
+            updateScore();
+            return true;
+        }
+
+        // ----- 处理点击 (选择/交换) -----
+        function handleCanvasClick(e) {
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+
+            let clientX, clientY;
+            if (e.touches) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+                e.preventDefault();
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const canvasX = (clientX - rect.left) * scaleX;
+            const canvasY = (clientY - rect.top) * scaleY;
+
+            const padding = 14;
+            const cellSize = (canvas.width - padding * 2) / COLS;
+            const col = Math.floor((canvasX - padding) / cellSize);
+            const row = Math.floor((canvasY - padding) / cellSize);
+
+            if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+
+            // 如果没有任何选中
+            if (selectedRow === -1 && selectedCol === -1) {
+                selectedRow = row;
+                selectedCol = col;
+                drawBoard();
+                return;
+            }
+
+            // 点击同一个块 => 取消选中
+            if (selectedRow === row && selectedCol === col) {
+                selectedRow = -1;
+                selectedCol = -1;
+                drawBoard();
+                return;
+            }
+
+            // 尝试交换 (选中块 + 当前点击块)
+            const success = trySwapAndClear(selectedRow, selectedCol, row, col);
+            // 无论交换是否成功，清除选中状态
+            selectedRow = -1;
+            selectedCol = -1;
+            drawBoard();
+            // 如果交换失败，重绘不变；如果成功，已经更新grid并重绘
+            // 但 trySwapAndClear 中可能已经修改 grid，需要重绘
+            // 但注意：trySwapAndClear 内部调用 drawBoard? 没有，所以在这里 drawBoard 刷新
+            // 但为了性能，drawBoard 已经调用了
+            // 然而消除后分数更新，重绘即可
+            // 但 trySwapAndClear 内部有修改 grid，并且分数更新
+            // 如果成功，重绘显示新板
+            // 如果失败，grid没变，重绘取消选中状态
+            drawBoard();
+        }
+
+        // ----- 重置事件绑定 -----
+        document.getElementById('resetButton').addEventListener('click', function(e) {
+            resetGame();
+            selectedRow = -1;
+            selectedCol = -1;
+            drawBoard();
+        });
+
+        // ----- 事件监听 (鼠标 + 触摸) -----
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('touchstart', handleCanvasClick, { passive: false });
+
+        // ----- 启动游戏 -----
+        resetGame();
+        drawBoard();
+    })();
+</script>
+</body>
+</html>
