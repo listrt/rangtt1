@@ -20,27 +20,24 @@
 <body>
     <div class="container">
         <h1>Rangtt 游戏数据</h1>
-        <!-- 数据容器 -->
         <div id="data-container" class="loading">数据加载中，请稍候...</div>
     </div>
 
     <script>
         // ==========================================
-        // 1. 全局配置参数（在这里修改你的信息）
+        // 1. 全局配置参数
         // ==========================================
         const GITHUB_CONFIG = {
-            repo: 'listr/rangtt1',             // 你的仓库路径
-            token: process.env.GITHUB_TOKEN        // ⚠️ 把你的新 Token 替换掉这行中文字符
+            repo: 'listr/rangtt1',             
+            token: '你的新Token粘贴在这里'        // ⚠️ 务必换成你最新生成的没泄露的 Token，保留单引号
         };
 
         // ==========================================
-        // 2. 🟢 核心函数封装 (将逻辑打包成一个函数)
+        // 2. 核心逻辑
         // ==========================================
         async function loadRangttData() {
             const container = document.getElementById('data-container');
-            
             try {
-                // 发起网络请求
                 const response = await fetch(`https://api.github.com/repos/${GITHUB_CONFIG.repo}/issues?state=open&per_page=100`, {
                     headers: { 'Authorization': `token ${GITHUB_CONFIG.token}` }
                 });
@@ -56,12 +53,9 @@
                     return;
                 }
 
-                // 拼接 HTML 内容
                 let html = '';
                 issues.forEach(item => {
                     let contentHtml = item.body || '（暂无正文）';
-                    
-                    // 核心逻辑：尝试把正文解析成 JSON 对象
                     try {
                         let jsonData = JSON.parse(item.body);
                         contentHtml = `
@@ -69,11 +63,9 @@
                             <div><b>内容：</b> ${jsonData.text || jsonData.content || '无'}</div>
                         `;
                     } catch (e) {
-                        // 如果不是 JSON 格式，就正常显示文本
                         contentHtml = contentHtml.replace(/\n/g, '<br>');
                     }
 
-                    // 生成单张卡片
                     html += `
                         <div class="card">
                             <h3>${item.title}</h3>
@@ -86,19 +78,14 @@
                     `;
                 });
                 
-                // 把拼好的内容渲染进网页
                 container.innerHTML = html;
 
             } catch (error) {
-                // 捕获错误
-                container.innerHTML = `<div class="error">加载失败！<br>原因：${error.message}<br>（请检查第二步中的仓库名和 Token 是否正确）</div>`;
+                container.innerHTML = `<div class="error">加载失败！<br>原因：${error.message}</div>`;
                 console.error('运行报错：', error);
             }
         }
 
-        // ==========================================
-        // 3. 页面加载时，执行这个函数
-        // ==========================================
         loadRangttData();
     </script>
 </body>
