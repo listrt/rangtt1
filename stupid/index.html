@@ -22,7 +22,7 @@ h1{text-align:center;margin-bottom:40px;color:#111}
 <script>
 const CONFIG = {
   owner: "listrt",
-  repo: "rangtt",
+  repo: "rangtt1",
   labelA: "site-stupid",
   labelB: "publish"
 };
@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
   container.innerHTML = `<div class="loading">加载中...</div>`;
   try{
     const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=open`);
-    if(!res.ok) throw new Error("接口请求失败");
+    if(!res.ok) throw new Error(`请求失败，状态码：${res.status}`);
     const rawList = await res.json();
 
     const articleList = rawList.filter(issue=>{
@@ -63,4 +63,4 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 });
 </script>
 </body>
-</html>
+</html>V
