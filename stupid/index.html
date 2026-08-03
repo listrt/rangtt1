@@ -1,3 +1,25 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>随笔文字库</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{padding:30px;max-width:900px;margin:0 auto}
+h1{text-align:center;margin-bottom:40px;color:#111}
+.article{border:1px solid #eee;border-radius:12px;padding:24px;margin-bottom:20px}
+.title{font-size:22px;font-weight:bold;margin-bottom:12px}
+.content{line-height:1.7;color:#333}
+.loading{text-align:center;color:#666;font-size:16px;margin-top:60px}
+.error{color:#d03030;text-align:center;margin-top:60px}
+</style>
+</head>
+<body>
+<h1>随笔文字库</h1>
+<div id="main"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
+<script>
 const CONFIG = {
   owner: "listrt",
   repo: "rangtt",
@@ -12,14 +34,11 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=open`);
     if(!res.ok) throw new Error("接口请求失败");
     const rawList = await res.json();
-    console.log("全部获取的issue：",rawList);
 
     const articleList = rawList.filter(issue=>{
       const labelNames = issue.labels.map(l=>l.name);
-      console.log("单条Issue标签列表：", labelNames);
       return labelNames.includes(CONFIG.labelA) && labelNames.includes(CONFIG.labelB);
     });
-    console.log("筛选后文章：",articleList);
 
     if(articleList.length === 0){
       container.innerHTML = `<div class="loading">暂无文章</div>`;
@@ -42,3 +61,6 @@ document.addEventListener("DOMContentLoaded", async ()=>{
     console.error(err);
   }
 });
+</script>
+</body>
+</html>
