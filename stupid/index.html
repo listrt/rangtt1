@@ -2,59 +2,71 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<title>文字站</title>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<title>随笔文字库</title>
 <style>
-body{max-width:720px;margin:3rem auto;padding:0 16px;font-family:system-ui;}
-.article-item{display:block;margin:12px 0;font-size:18px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+body{padding:30px;max-width:900px;margin:0 auto}
+h1{text-align:center;margin-bottom:40px;color:#111}
+.article{border:1px solid #eee;border-radius:12px;padding:24px;margin-bottom:20px}
+.title{font-size:22px;font-weight:bold;margin-bottom:12px}
+.content{line-height:1.7;color:#333}
+.loading{text-align:center;color:#666;font-size:16px;margin-top:60px}
+.error{color:#d03030;text-align:center;margin-top:60px}
 </style>
 </head>
 <body>
 <h1>随笔文字库</h1>
 <div id="main"></div>
+
+<!-- Markdown解析CDN -->
+<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
 <script>
-// 仓库信息，对应你当前仓库
-const OWNER = "listrt";
-const REPO = "rangtt";
+// =========配置区 修改这里=========
+const CONFIG = {
+  owner: "listrt",
+  repo: "rangtt",
+  labelA: "site-stupid",
+  labelB: "publish"
+};
+// =================================
+
 const container = document.getElementById("main");
 
-function getParam(key){
-  const search = new URLSearchParams(location.search);
-  return search.get(key);
-}
-const articleId = getParam("id");
+// DOM加载完毕执行
+document.addEventListener("DOMContentLoaded", async ()=>{
+  container.innerHTML = `<div class="loading">加载中...</div>`;
+  try{
+    const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=open`);
+    if(!res.ok) throw new Error("接口请求失败");
+    const rawList = await res.json();
 
-if(articleId){
-  loadSingleArticle(articleId);
-}else{
-  loadArticleList();
-}
+    // 本地筛选：同时具备两个标签
+    const articleList = rawList.filter(issue=>{
+      const labelNames = issue.labels.map(l=>l.name);
+      return labelNames.includes(CONFIG.labelA) && labelNames.includes(CONFIG.labelB);
+    });
 
-// 加载文章列表
-async function loadArticleList(){
-  const url = `https://api.github.com/repos/${OWNER}/${REPO}/issues?labels=site-stupid,publish&state=open`;
-  const res = await fetch(url);
-  const list = await res.json();
-  list.forEach(art=>{
-    const a = document.createElement("a");
-    a.className = "article-item";
-    a.href = "?id="+art.number;
-    a.textContent = art.title;
-    container.appendChild(a);
-  })
-}
+    if(articleList.length === 0){
+      container.innerHTML = `<div class="loading">暂无文章</div>`;
+      return;
+    }
 
-// 加载单篇文章详情
-async function loadSingleArticle(num){
-  const url = `https://api.github.com/repos/${OWNER}/${REPO}/issues/${num}`;
-  const res = await fetch(url);
-  const art = await res.json();
-  container.innerHTML = `
-    <h2>${art.title}</h2>
-    <div>${marked.parse(art.body)}</div>
-    <br><a href="./">← 返回列表</a>
-  `;
-}
+    let html = "";
+    articleList.forEach(art=>{
+      const mdHtml = marked.parse(art.body || "");
+      html += `
+      <div class="article">
+        <div class="title">${art.title}</div>
+        <div class="content">${mdHtml}</div>
+      </div>
+      `;
+    });
+    container.innerHTML = html;
+  }catch(err){
+    container.innerHTML = `<div class="error">加载失败：${err.message}</div>`;
+    console.error(err);
+  }
+});
 </script>
 </body>
 </html>
