@@ -1,61 +1,138 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>随笔文字库</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
-body{padding:30px;max-width:900px;margin:0 auto}
-h1{text-align:center;margin-bottom:40px;color:#111}
-.article{border:1px solid #eee;border-radius:12px;padding:24px;margin-bottom:20px}
-.title{font-size:22px;font-weight:bold;margin-bottom:12px}
-.content{line-height:1.7;color:#333}
-.loading{text-align:center;color:#666;font-size:16px;margin-top:60px}
-.error{color:#d03030;text-align:center;margin-top:60px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>留言板</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+        body{max-width:680px;margin:3rem auto;padding:0 1rem;color:#222;background:#f7f8fa}
+        .auth-box,.publish-box{background:#fff;padding:1.25rem;border-radius:10px;margin-bottom:1.25rem;box-shadow:0 1px 4px #00000012}
+        h2{margin-bottom:1rem;font-size:18px}
+        input,textarea{width:100%;padding:0.75rem;border:1px solid #ddd;border-radius:6px;margin-bottom:0.75rem;font-size:15px}
+        textarea{resize:none;height:80px;max-width:100%}
+        button{padding:0.7rem 1.4rem;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer}
+        button:disabled{background:#94b3ee;cursor:not-allowed}
+        .msg-item{background:#fff;padding:1rem;border-radius:8px;margin-bottom:0.8rem}
+        .msg-head{display:flex;justify-content:space-between;color:#666;font-size:13px;margin-bottom:0.4rem}
+        .msg-content{margin:0.5rem 0}
+        .like-btn{background:#ef4444}
+        .hidden{display:none}
+    </style>
 </head>
 <body>
-<h1>随笔文字库</h1>
-<div id="main"></div>
+    <div class="auth-box" id="authWrap">
+        <h2>登录 / 注册</h2>
+        <input placeholder="用户名" id="username">
+        <input type="password" placeholder="密码" id="password">
+        <button id="loginBtn">登录</button>
+        <button id="regBtn">注册</button>
+    </div>
 
-<script src="https://cdn.jsdelivr.net/npm/marked@11.1.1/marked.min.js"></script>
-<script>
-const CONFIG = {
-  owner: "listrt",
-  repo: "rangtt1",
-  labelA: "site-stupid",
-  labelB: "publish"
-};
-const container = document.getElementById("main");
+    <div class="publish-box hidden" id="publishWrap">
+        <h2>发布留言（最多20字）</h2>
+        <textarea maxlength="20" placeholder="输入留言..." id="msgInput"></textarea>
+        <div><span id="wordCount">0/20</span></div>
+        <button id="sendBtn">提交</button>
+    </div>
 
-(async ()=>{
-  container.innerHTML = `<div class="loading">加载中...</div>`;
-  try{
-    const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=open`);
-    const rawList = await res.json();
+    <div id="messageList"></div>
 
-    const articleList = rawList.filter(issue=>{
-      // 关键修复：全部trim()清除首尾空格
-      const names = issue.labels.map(l => l.name.trim());
-      return names.includes(CONFIG.labelA) && names.includes(CONFIG.labelB);
-    });
+    <script>
+        const $ = sel => document.querySelector(sel);
+        const userKey = "msg_user";
+        const dataKey = "msg_data";
 
-    if(articleList.length === 0){
-      container.innerHTML = `<div class="loading">暂无文章</div>`;
-      return;
-    }
+        //字数监听
+        $("#msgInput").oninput = e=>{
+            $("#wordCount").textContent = `${e.target.value.length}/20`;
+        }
 
-    let html = "";
-    articleList.forEach(art=>{
-      const md = marked.parse(art.body || "");
-      html += `<div class="article"><div class="title">${art.title}</div><div class="content">${md}</div></div>`;
-    });
-    container.innerHTML = html;
-  }catch(err){
-    container.innerHTML = `<div class="error">加载失败：${err.message}</div>`;
-    console.error(err);
-  }
-})();
-</script>
+        //加载本地账号与留言
+        function loadUser(){
+            return JSON.parse(localStorage.getItem(userKey)||"null");
+        }
+        function saveUser(u){
+            localStorage.setItem(userKey,JSON.stringify(u));
+        }
+        function loadMessages(){
+            return JSON.parse(localStorage.getItem(dataKey)||"[]");
+        }
+        function saveMessages(list){
+            localStorage.setItem(dataKey,JSON.stringify(list));
+        }
+
+        //渲染留言
+        function render(){
+            const list = loadMessages();
+            const html = list.map(item=>`
+                <div class="msg-item">
+                    <div class="msg-head">
+                        <span>${item.sender}</span>
+                        <span>${item.time}</span>
+                    </div>
+                    <div class="msg-content">${item.content}</div>
+                    <button class="like-btn" data-id="${item.id}">点赞 ${item.like}</button>
+                </div>
+            `).join("");
+            $("#messageList").innerHTML = html;
+            //点赞事件
+            document.querySelectorAll(".like-btn").forEach(btn=>{
+                btn.onclick=()=>{
+                    const mid = btn.dataset.id;
+                    const arr = loadMessages();
+                    const target = arr.find(v=>v.id===mid);
+                    if(target){
+                        target.like++;
+                        saveMessages(arr);
+                        render();
+                    }
+                }
+            })
+        }
+
+        //注册
+        $("#regBtn").onclick = ()=>{
+            const name = $("#username").value.trim();
+            const pwd = $("#password").value.trim();
+            if(!name||!pwd) return alert("用户名密码不能为空");
+            const user = loadUser();
+            if(user) return alert("已有登录账号，请先清除缓存");
+            saveUser({name,pwd});
+            alert("注册成功，请登录");
+        }
+
+        //登录
+        $("#loginBtn").onclick = ()=>{
+            const name = $("#username").value.trim();
+            const pwd = $("#password").value.trim();
+            const user = loadUser();
+            if(!user||user.name!==name||user.pwd!==pwd){
+                return alert("账号或密码错误");
+            }
+            $("#authWrap").classList.add("hidden");
+            $("#publishWrap").classList.remove("hidden");
+            render();
+        }
+
+        //发消息
+        $("#sendBtn").onclick = ()=>{
+            const text = $("#msgInput").value.trim();
+            if(!text) return alert("内容不能为空");
+            const msgs = loadMessages();
+            const user = loadUser();
+            msgs.unshift({
+                id:Date.now().toString(),
+                sender:user.name,
+                content:text,
+                time:new Date().toLocaleString(),
+                like:0
+            })
+            saveMessages(msgs);
+            $("#msgInput").value="";
+            $("#wordCount").textContent="0/20";
+            render();
+        }
+    </script>
 </body>
 </html>
