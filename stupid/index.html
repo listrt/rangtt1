@@ -28,16 +28,16 @@ const CONFIG = {
 };
 const container = document.getElementById("main");
 
-document.addEventListener("DOMContentLoaded", async ()=>{
+(async ()=>{
   container.innerHTML = `<div class="loading">加载中...</div>`;
   try{
     const res = await fetch(`https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/issues?state=open`);
-    if(!res.ok) throw new Error(`请求失败，状态码：${res.status}`);
     const rawList = await res.json();
 
     const articleList = rawList.filter(issue=>{
-      const labelNames = issue.labels.map(l=>l.name);
-      return labelNames.includes(CONFIG.labelA) && labelNames.includes(CONFIG.labelB);
+      // 关键修复：全部trim()清除首尾空格
+      const names = issue.labels.map(l => l.name.trim());
+      return names.includes(CONFIG.labelA) && names.includes(CONFIG.labelB);
     });
 
     if(articleList.length === 0){
@@ -47,20 +47,15 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 
     let html = "";
     articleList.forEach(art=>{
-      const mdHtml = marked.parse(art.body || "");
-      html += `
-      <div class="article">
-        <div class="title">${art.title}</div>
-        <div class="content">${mdHtml}</div>
-      </div>
-      `;
+      const md = marked.parse(art.body || "");
+      html += `<div class="article"><div class="title">${art.title}</div><div class="content">${md}</div></div>`;
     });
     container.innerHTML = html;
   }catch(err){
     container.innerHTML = `<div class="error">加载失败：${err.message}</div>`;
     console.error(err);
   }
-});
+})();
 </script>
 </body>
-</html>V
+</html>
